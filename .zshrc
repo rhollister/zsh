@@ -5,7 +5,7 @@ colors
 # change the prompt's color based on which server we're on
 #  if i'm not on a usual server, make the hostname red
 #  with lots of terminals open it can be easy to run a command on the wrong box
-color=%{$fg_bold[white]%}
+color=%{$fg_bold[green]%}
 #case `hostname -s` in
 #   some_servername)
 #       color=%{$fg_bold[blue]%}
@@ -93,8 +93,8 @@ alias 'df'='df -H'
 #   see also: why you should never parse ls: http://mywiki.wooledge.org/ParsingLs
 _ll() { 
 # load ls -l for parsing
-listing=`/bin/ls -l "$@" --color --time-style="+%b %e %H:%M:%S %s" | 
-  sed "s/ \(\`date '+%b %e'\`\) / $fg[blue]\1$fg_no_bold[default] /" `
+listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" | 
+ sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / $fg[blue]\1$fg_no_bold[default] /" `
 
 # find the newest modified file
 newesttime=`echo $listing | awk '$9 > max { max=$9 }; END { print max }'`
