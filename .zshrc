@@ -40,7 +40,7 @@ promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 #   ;;
 
 # the prompt itself looks like: hostname /complete/file/path/>
-PROMPT="$promtcolor%m %/> %{$fg_no_bold[default]%}"
+PROMPT="$promptcolor%m %/> %{$fg_no_bold[default]%}"
 
 autoload -U compinit
 compinit
