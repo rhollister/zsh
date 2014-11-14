@@ -195,7 +195,7 @@ else
 fi
 unfunction zkbd_file; unset keyfile ret
 
-# setup key accordingly
+# setup keys accordingly
 [[ -n "${key[Home]}"    ]]  && bindkey  "${key[Home]}"    beginning-of-line
 [[ -n "${key[End]}"     ]]  && bindkey  "${key[End]}"     end-of-line
 [[ -n "${key[Insert]}"  ]]  && bindkey  "${key[Insert]}"  overwrite-mode
@@ -204,3 +204,44 @@ unfunction zkbd_file; unset keyfile ret
 [[ -n "${key[Down]}"    ]]  && bindkey  "${key[Down]}"    down-line-or-history
 [[ -n "${key[Left]}"    ]]  && bindkey  "${key[Left]}"    backward-char
 [[ -n "${key[Right]}"   ]]  && bindkey  "${key[Right]}"   forward-char
+
+# print out pretty tables of the ANSI colors
+#  default prints two tables side-by-side
+#  optional -n parameter prints tables one after another
+_colortable() {
+if [[ "$1" == "-n" ]]; then
+ echo "Alternate view:"
+ for i in {0..36}; do
+  for j in {0..6}; do
+   (( j=j*36 ))
+   (( val=j+ i/6+(6*i)%36 ))
+   if  (( val < 16 )); then (( val=0 )); fi
+   printf "%b%03i%s%b " "\033[38;5;${val}m" "$val" ":Test" "\033[m"
+  done
+  printf "\n"
+ done
+ echo "\nNormal view:"
+else
+ echo "\nNormal view:                                                   Alternate view:"
+fi
+
+for i in {0..35}; do
+ for j in {0..6}; do
+  (( j=j*36 ))
+  (( val=j+i ))
+  printf "%b%03i%s%b " "\033[38;5;${val}m" "$val" ":Test" "\033[m"
+ done
+ printf "   "
+ if [[ "$1" != "-n" ]]; then
+  for j in {0..6}; do
+   (( j=j*36 ))
+   (( val=j+ i/6+(6*i)%36 ))
+   if  (( val < 16 )); then (( val=0 )); fi
+   printf "%b%03i%s%b " "\033[38;5;${val}m" "$val" ":Test" "\033[m"
+  done
+ fi
+ printf "\n"
+done
+echo
+}
+alias colortable=_colortable()
