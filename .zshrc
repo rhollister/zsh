@@ -2,18 +2,37 @@
 autoload colors
 colors
 
-# change the prompt's color based on which server we're on
-#  if i'm not on a usual server, make the hostname red
-#  with lots of terminals open it can be easy to run a command on the wrong box
-color=%{$fg_bold[green]%}
+# change the prompt's color based on a hash of the hostname
+startcolor=26
+darkcolors=(28 {52..60} {88..96} 100 124)
+
+# get an 8bit hash of the hostname
+hash=$(hostname -s | md5sum | cut -c1-2) 
+
+# convert to decimal and skip preset colors
+(( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
+
+# shift dark colors to more readable colors
+index=$darkcolors[(i)$hostcolor]}
+if (( index < ${#darkcolors} )); then
+ (( hostcolor=index+$startcolor-1 ));
+
+# shift the last 32 colors to be more distinct colors
+elif (( hostcolor>=128-32+$#darkcolors+$startcolor )); then
+  (( hostcolor=(230-32)+(hostcolor-(128-32+$#darkcolors+$startcolor)) ));
+fi;
+
+promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
+
+# preferably hardcode the color
 #case `hostname -s` in
-#   some_servername)
+#   HOSTNAME1)
 #       color=%{$fg_bold[blue]%}
 #           ;;
-#   some_other_servername)
+#   HOSTNAME2)
 #       color=%{$fg_bold[yellow]%}
 #   ;;
-#   yet_another_servername)
+#   HOSTNAME3)
 #       color=%{$fg[yellow]%}
 #   ;;
 #   *)
@@ -21,7 +40,7 @@ color=%{$fg_bold[green]%}
 #   ;;
 
 # the prompt itself looks like: hostname /complete/file/path/>
-PROMPT="$color%m %/> %{$fg_no_bold[default]%}"
+PROMPT="$promtcolor%m %/> %{$fg_no_bold[default]%}"
 
 autoload -U compinit
 compinit
@@ -88,62 +107,67 @@ alias 'df'='df -H'
 #  - highlights largest file size(s)
 #  - colorizes size-units K/M/G/T/P for easy recognition
 #  - hides useless 4.0K size for every directory
-# CAUTION: THESE ARE HUGE HACKS and they look for hard-coded columns, 
 #  adding/removing columns (eg, ll -i) *will* cause these to break
 #   see also: why you should never parse ls: http://mywiki.wooledge.org/ParsingLs
-_ll() { 
-# load ls -l for parsing
-listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" | 
+_ll() {
+# load ls -l for parsing and highlight todays date
+listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" |
  sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / $fg[blue]\1$fg_no_bold[default] /" `
 
-# find the newest modified file
-newesttime=`echo $listing | awk '$9 > max { max=$9 }; END { print max }'`
-maxuserwidth=`echo $listing | awk 'length($3) > max { max=length($3) }; END { print max }'`
+# find the newest modified file, width of the user permission column, and largest file size
+IFS=' ' read -A array <<< `echo $listing | awk '
+ length($3) > largestwidth { largestwidth=length($3) }
+ ($1!~/^d/) { if($5 > largestsize) { largestsize=$5 } }
+ ($9 > newesttime) { newesttime=$9 }
+ END { printf largestwidth " " largestsize " " newesttime }'`
 
-# highlight the most recent time and strip out epoch times
-listing=`echo $listing | sed "s/ \([0-9][0-9]:[0-9][0-9]:[0-9][0-9]\) $newesttime / $fg[blue]\1$fg_no_bold[default] /" | sed "s/ \([0-9][0-9]:[0-9][0-9]:[0-9][0-9]\) [0-9]*/ \1 /" `
+maxuserwidth=${array[1]}
+largestfile=${array[2]}
 
-# find the largest file size
-largestfile=`echo $listing | awk '$1!~/^d/ { if($5 > max) { max=$5 }}; END { print max }'`
-
-listing=`echo $listing | awk '
-BEGIN {   
+# load up newesttime as an awk variable, otherwise the condition will fail
+echo $listing | awk -v newesttime=${array[3]} '
+BEGIN {
  # load up colors for human-readable file sizes
- split("B '"$fg[blue]"'K '"$fg[red]"'M '"$fg[green]"'G '"$fg[yellow]"'T '"$fg[yellow]"'P", type);
+ split("B '"$fg[blue]"'K '"$fg[red]"'M '"$fg[green]"'G '"$fg[yellow]"'T '"$fg[magenta]"'P", type);
 
  # hide B for bytes
  type[1]=" ";
 }
-{
- if(NR!=1 && $1 && $2 && $3)
- {
-  # if this is the largest file, highlight it blue
+# highlight the most recent timestamp
+($9 == newesttime) {
+ $8="'"$fg[blue]"'" $8 "'"$fg_no_bold[default]"'"
+}
+(NR!=1 && $1 && $2 && $3) {
+  # highlight the largest file
   if($5 ~ /^'"$largestfile"'$/) { highlight="'"$fg[blue]"'";highlightend="'"$fg_no_bold[default]"'";}
 
   # convert file sizes into human-readable format
-  size=0; for(i=6;size<1&&i>=0;i--){size=$5/(2**(10*i))}
+  size=0;
+  # start at the largest size unit
+  for(i=6; size<1 && i>=0; i--) {
+    # convert the file size to the size unit until we get a measurement over 1.0
+    size=$5/(2**(10*i))
+  }
 
-  # if the size is greater than 10, dont bother displaying decimals
-  if(size>=10 || int(size*10)%10==0) { $5=sprintf("%s%4d%s%s",  highlight,size,type[i+2],highlightend);}
+  # only show a decimal place if the size is <10 has a non-zero in the tenth decimal place
+  if(size>=10 || int(size*10)%10==0) { $5=sprintf("%s%4d%s%s",  highlight,size,type[i+2],highlightend); }
   # else print tenth decimal
-  else {                               $5=sprintf("%s%4.1f%s%s",highlight,size,type[i+2],highlightend);}
+  else                               { $5=sprintf("%s%4.1f%s%s",highlight,size,type[i+2],highlightend); }
 
-  #hide directory sizes
+  # hide sizes for directories
   if($1 ~ /^d/) { $5="     ";}
 
-  # turn off highlighting
-  highlight="";highlightend="";
-
   # print out the fields we want
-  printf("%s %-'"$maxuserwidth"'s %s'"$fg_no_bold[default]"' %s %2d'"$fg_no_bold[default]"' ",$1,$3,$5,$6,$7);
+  printf("%s %-'"$maxuserwidth"'s %s'"$fg_no_bold[default]"' %s %2d'"$fg_no_bold[default]"' %s ",$1,$3,$5,$6,$7,$8);
 
   # print out the file name (which might have spaces in it)
-  for(i=8;i<NF;i++){printf("%s%s",$i,OFS)} 
-  print $NF 
- }
+  for(i=10;i<NF;i++){printf $i OFS}
+  print $NF
+
+  # reset highlighting for next record
+  highlight="";highlightend="";
 }
-'`
-echo $listing;
+'
+
 }
 alias ll=_ll
-
