@@ -152,10 +152,10 @@ alias 'ls'='ls --color'
 _ll() {
 # load ls -l for parsing and highlight todays date
 listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" |
- sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / $fg[blue]\1$fg_no_bold[default] /" `
+ sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / ${BLUE}\1$BLUE /" `
 
 # find the newest modified file, width of the user permission column, and largest file size
-IFS=' ' read -A array <<< `echo $listing | awk -v magnitudes="$magnitudes[*]" '
+IFS=' ' read -A array <<< `echo $listing | awk '
  length($3) > largestwidth { largestwidth=length($3) }
  ($1!~/^d/) { if($5 > largestsize) { largestsize=$5 } }
  ($9 > newesttime) { newesttime=$9 }
@@ -163,16 +163,22 @@ IFS=' ' read -A array <<< `echo $listing | awk -v magnitudes="$magnitudes[*]" '
 
 maxuserwidth=${array[1]}
 largestfile=${array[2]}
-
+magnitudestr="${magnitudes[K]}K"
+for m in "M" "G" "T" "P" "E";do
+  magnitudestr="$magnitudestr~${magnitudes[$m]}$m";
+done
 # load up newesttime as an awk variable, otherwise the condition will fail
-echo $listing | awk -v newesttime=${array[3]} '
+echo $listing | awk -v newesttime=${array[3]} -v magnitudestr=" ~${magnitudestr}" '
+BEGIN {
+ split(magnitudestr, magnitudes, /~/)
+}
 # highlight the most recent timestamp
 ($9 == newesttime) {
- $8="'"$fg[blue]"'" $8 "'"$fg_no_bold[default]"'"
+ $8="'"$BLUE"'" $8 "'"$NORM"'"
 }
 (NR!=1 && $1 && $2 && $3) {
   # highlight the largest file
-  if($5 ~ /^'"$largestfile"'$/) { highlight="'"$fg[blue]"'";highlightend="'"$fg_no_bold[default]"'";}
+  if($5 ~ /^'"$largestfile"'$/) { highlight="'"$BLUE"'";highlightend="'"$NORM"'";}
 
   # convert file sizes into human-readable format
   size=0;
@@ -191,7 +197,7 @@ echo $listing | awk -v newesttime=${array[3]} '
   if($1 ~ /^d/) { $5="     ";}
 
   # print out the fields we want
-  printf("%s %-'"$maxuserwidth"'s %s'"$fg_no_bold[default]"' %s %2d'"$fg_no_bold[default]"' %s ",$1,$3,$5,$6,$7,$8);
+  printf("%s %-'"$maxuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s ",$1,$3,$5,$6,$7,$8);
 
   # print out the file name (which might have spaces in it)
   for(i=10;i<NF;i++){printf $i OFS}
@@ -201,7 +207,6 @@ echo $listing | awk -v newesttime=${array[3]} '
   highlight="";highlightend="";
 }
 '
-
 }
 alias ll=_ll
 
@@ -315,7 +320,7 @@ listing=`/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Availabl
 
 # loop through each byte magnitude and colorize each instance found 
 for u in ${(k)magnitudes};
-  do listing=`echo $listing | sed -r -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[KMGTPEZY ][ ]*[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g"`;
+  do listing=`echo $listing | sed -r -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g"`;
 done;
 
 # print output with >80% usage in orange, >90% in red, and >98% in bright red
