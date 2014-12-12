@@ -2,6 +2,37 @@
 autoload colors
 colors
 
+# ROYGBIP preset colors plus light, dark, and bold/bright modifiers
+export NORM=`echo -e "\033[38;5;7m"`
+export RED=`echo -e "\033[38;5;203m"`
+export ORANGE=`echo -e "\033[38;5;208m"`
+export YELLOW=`echo -e "\033[38;5;227m"`
+export GREEN=`echo -e "\033[38;5;40m"`
+export BLUE=`echo -e "\033[38;5;39m"`
+export PURPLE=`echo -e "\033[38;5;129m"`
+export LRED=`echo -e "\033[38;5;212m"`
+export LORANGE=`echo -e "\033[38;5;216m"`
+export LYELLOW=`echo -e "\033[38;5;228m"`
+export LGREEN=`echo -e "\033[38;5;120m"`
+export CYAN=`echo -e "\033[38;5;51m"`
+export LBLUE=`echo -e "\033[38;5;81m"`
+export LPURPLE=`echo -e "\033[38;5;171m"`
+export DRED=`echo -e "\033[38;5;124m"`
+export DORANGE=`echo -e "\033[38;5;166m"`
+export DYELLOW=`echo -e "\033[38;5;142m"`
+export DGREEN=`echo -e "\033[38;5;34m"`
+export DBLUE=`echo -e "\033[38;5;31m"`
+export DPURPLE=`echo -e "\033[38;5;165m"`
+export BRED=`echo -e "\033[38;5;196m"`
+export BORANGE=`echo -e "\033[38;5;214m"`
+export BYELLOW=`echo -e "\033[38;5;226m"`
+export BGREEN=`echo -e "\033[38;5;46m"`
+export BBLUE=`echo -e "\033[38;5;21m"`
+export BPURPLE=`echo -e "\033[38;5;201m"`
+
+# preset colors for scripts that colorize byte unit sizes (eg K, M, G, etc)
+typeset -A magnitudes;magnitudes[K]=$BLUE;magnitudes[M]=$RED;magnitudes[G]=$GREEN;magnitudes[T]=$YELLOW;magnitudes[P]=$LPURPLE;magnitudes[E]=$LBLUE;
+
 # change the prompt's color based on a hash of the hostname
 startcolor=26
 darkcolors=(28 {52..60} {88..96} 100 124)
@@ -109,14 +140,12 @@ alias 'history'='history -Di'
 alias 'fh'='history 1 | grep'a
 # color listings
 alias 'ls'='ls --color'
-# much easier to read
-alias 'df'='df -H'
 
 # compilation of hacks for ls -l
 #  - highlights today's date
 #  - highlights most recently modified time(s)
 #  - highlights largest file size(s)
-#  - colorizes size-units K/M/G/T/P for easy recognition
+#  - colorizes byte magnitudes K, M, G, etc for easy recognition
 #  - hides useless 4.0K size for every directory
 #  adding/removing columns (eg, ll -i) *will* cause these to break
 #   see also: why you should never parse ls: http://mywiki.wooledge.org/ParsingLs
@@ -126,7 +155,7 @@ listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" |
  sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / $fg[blue]\1$fg_no_bold[default] /" `
 
 # find the newest modified file, width of the user permission column, and largest file size
-IFS=' ' read -A array <<< `echo $listing | awk '
+IFS=' ' read -A array <<< `echo $listing | awk -v magnitudes="$magnitudes[*]" '
  length($3) > largestwidth { largestwidth=length($3) }
  ($1!~/^d/) { if($5 > largestsize) { largestsize=$5 } }
  ($9 > newesttime) { newesttime=$9 }
@@ -137,13 +166,6 @@ largestfile=${array[2]}
 
 # load up newesttime as an awk variable, otherwise the condition will fail
 echo $listing | awk -v newesttime=${array[3]} '
-BEGIN {
- # load up colors for human-readable file sizes
- split("B '"$fg[blue]"'K '"$fg[red]"'M '"$fg[green]"'G '"$fg[yellow]"'T '"$fg[magenta]"'P", type);
-
- # hide B for bytes
- type[1]=" ";
-}
 # highlight the most recent timestamp
 ($9 == newesttime) {
  $8="'"$fg[blue]"'" $8 "'"$fg_no_bold[default]"'"
@@ -161,9 +183,9 @@ BEGIN {
   }
 
   # only show a decimal place if the size is <10 has a non-zero in the tenth decimal place
-  if(size>=10 || int(size*10)%10==0) { $5=sprintf("%s%4d%s%s",  highlight,size,type[i+2],highlightend); }
+  if(size>=10 || int(size*10)%10==0) { $5=sprintf("%s%4d%s%s",  highlight,size,magnitudes[i+2],highlightend); }
   # else print tenth decimal
-  else                               { $5=sprintf("%s%4.1f%s%s",highlight,size,type[i+2],highlightend); }
+  else                               { $5=sprintf("%s%4.1f%s%s",highlight,size,magnitudes[i+2],highlightend); }
 
   # hide sizes for directories
   if($1 ~ /^d/) { $5="     ";}
@@ -220,6 +242,32 @@ unfunction zkbd_file; unset keyfile ret
 #  default prints two tables side-by-side
 #  optional -n parameter prints tables one after another
 _colortable() {
+echo "${LRED}LRED
+${RED}RED
+${BRED}BRED
+${DRED}DRED
+${LORANGE}LORANGE
+${ORANGE}ORANGE
+${BORANGE}BORANGE
+${DORANGE}DORANGE
+${LYELLOW}LYELLOW
+${YELLOW}YELLOW
+${BYELLOW}BYELLOW
+${DYELLOW}DYELLOW
+${LGREEN}LGREEN
+${GREEN}GREEN
+${BGREEN}BGREEN
+${DGREEN}DGREEN
+${CYAN}CYAN
+${LBLUE}LBLUE
+${BLUE}BLUE
+${BBLUE}BBLUE
+${DBLUE}DBLUE
+${LPURPLE}LPURPLE
+${PURPLE}PURPLE
+${BPURPLE}BPURPLE
+${DPURPLE}DPURPLE"
+
 if [[ "$1" == "-n" ]]; then
  echo "Alternate view:"
  for i in {0..36}; do
@@ -256,3 +304,21 @@ done
 echo
 }
 alias colortable=_colortable
+
+# ridiculously overcomplicated colorized df
+#  this would be much cleaner with a full regex engine that supported lookarounds, 
+#  but using sed for cross platform compatibility
+_df() {
+
+# colorize the Size, Used, Available, and Use% columns
+listing=`/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Available([ ]+)Use%/\1${LBLUE}Size\2${LORANGE}Used\3${LGREEN}Available\4${LGREEN}Use%${NORM}/" -e "s/([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9]+\%) \//${LBLUE}\1${LORANGE}\2${LGREEN}\3${LGREEN}\4 ${NORM}\//g"`;
+
+# loop through each byte magnitude and colorize each instance found 
+for u in ${(k)magnitudes};
+  do listing=`echo $listing | sed -r -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[KMGTPEZY ][ ]*[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g"`;
+done;
+
+# print output with >80% usage in orange, >90% in red, and >98% in bright red
+echo $listing | sed -r -e "s/(8[0-9]\% [^/]+\/)/$LORANGE\1/g" -e "s/(9[0-7]\% [^/]+\/)/$RED\1/g" -e "s/(9[8-9]\% [^/]+\/)/$BRED\1/g" -e "s/(100\% [^/]+\/)/$BRED\1/g"
+}
+alias df=_df
