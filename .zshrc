@@ -13,7 +13,7 @@ hash=$(hostname -s | md5sum | cut -c1-2)
 (( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
 
 # shift dark colors to more readable colors
-index=$darkcolors[(i)$hostcolor]}
+index=$darkcolors[(i)$hostcolor]
 if (( index < ${#darkcolors} )); then
  (( hostcolor=index+$startcolor-1 ));
 
@@ -40,7 +40,7 @@ promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 #   ;;
 
 # the prompt itself looks like: hostname /complete/file/path/>
-PROMPT="$promptcolor%m %/> %{$fg_no_bold[default]%}"
+PROMPT="%{$promptcolor%}%m %/> %{$fg_no_bold[default]%}"
 
 autoload -U compinit
 compinit
@@ -244,4 +244,4 @@ for i in {0..35}; do
 done
 echo
 }
-alias colortable=_colortable()
+alias colortable=_colortable
