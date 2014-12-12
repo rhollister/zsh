@@ -42,11 +42,14 @@ promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 # the prompt itself looks like: hostname /complete/file/path/>
 PROMPT="%{$promptcolor%}%m %/> %{$fg_no_bold[default]%}"
 
+# change terminal title
 case $TERM in
-    xterm*)
-            precmd () {t=`print -P "%m:%~"`; if (( ${#t}>20 )); then t=`echo $t | sed 's/\([^:]\)[^:]*\([^:]\)\:/\1\2:/'`; if (( ${#t}>20 )); then t=`echo $t | sed 's/\/\(.\)[^\/]*/\/\1/g'`;fi;fi; print "\e]0;$t\a"}
-	    preexec () { print -Pn "\e]0;%* $1\a" }
-        ;;
+  xterm*)
+    # update the the title with the current directory, abbreviate if over 25 characters
+    precmd () {t=`print -P "%m:%~"`; if (( ${#t}>25 )); then t=`echo $t | sed -r 's/([^:])[^:]*([0-9][0-9]):|([^:])[^:]*([^:]):/\1\2\3\4:/'`;oldlen=-1;while (( ${#t}>25 && ${#t}!=oldlen)) {oldlen=${#t};t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;};fi; print "\e]0;$t\a"}
+    # update the title with a timestamp and the current process
+    preexec () { print -Pn "\e]0;%* $1\a" }
+    ;;
 esac
 
 
