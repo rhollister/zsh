@@ -42,6 +42,14 @@ promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 # the prompt itself looks like: hostname /complete/file/path/>
 PROMPT="%{$promptcolor%}%m %/> %{$fg_no_bold[default]%}"
 
+case $TERM in
+    xterm*)
+            precmd () {t=`print -P "%m:%~"`; if (( ${#t}>20 )); then t=`echo $t | sed 's/\([^:]\)[^:]*\([^:]\)\:/\1\2:/'`; if (( ${#t}>20 )); then t=`echo $t | sed 's/\/\(.\)[^\/]*/\/\1/g'`;fi;fi; print "\e]0;$t\a"}
+	    preexec () { print -Pn "\e]0;%* $1\a" }
+        ;;
+esac
+
+
 autoload -U compinit
 compinit
 
