@@ -31,29 +31,35 @@ export BBLUE=`echo -e "\033[38;5;21m"`
 export BPURPLE=`echo -e "\033[38;5;201m"`
 
 # preset colors for scripts that colorize byte unit sizes (eg K, M, G, etc)
-typeset -A magnitudes;magnitudes[K]=$BLUE;magnitudes[M]=$RED;magnitudes[G]=$GREEN;magnitudes[T]=$YELLOW;magnitudes[P]=$LPURPLE;magnitudes[E]=$LBLUE;
+typeset -A magnitudes;
+magnitudes[K]=$BLUE;
+magnitudes[M]=$RED;
+magnitudes[G]=$GREEN;
+magnitudes[T]=$YELLOW;
+magnitudes[P]=$LPURPLE;
+magnitudes[E]=$LBLUE;
 
 # change the prompt's color based on a hash of the hostname
-startcolor=26
-darkcolors=(28 {52..60} {88..96} 100 124)
+ startcolor=26
+ darkcolors=(28 {52..60} {88..96} 100 124)
 
-# get an 8bit hash of the hostname
-hash=$(hostname -s | md5sum | cut -c1-2) 
+ # get an 8bit hash of the hostname
+ hash=$(hostname -s | md5sum | cut -c1-2) 
 
-# convert to decimal and skip preset colors
-(( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
+ # convert to decimal and skip preset colors
+ (( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
 
-# shift dark colors to more readable colors
-index=$darkcolors[(i)$hostcolor]
-if (( index < ${#darkcolors} )); then
- (( hostcolor=index+$startcolor-1 ));
+ # shift dark colors to more readable colors
+ index=$darkcolors[(i)$hostcolor]
+ if (( index < ${#darkcolors} )); then
+  (( hostcolor=index+$startcolor-1 ));
 
-# shift the last 32 colors to be more distinct colors
-elif (( hostcolor>=128-32+$#darkcolors+$startcolor )); then
-  (( hostcolor=(230-32)+(hostcolor-(128-32+$#darkcolors+$startcolor)) ));
-fi;
+ # shift the last 32 colors to be more distinct colors
+ elif (( hostcolor>=128-32+$#darkcolors+$startcolor )); then
+   (( hostcolor=(230-32)+(hostcolor-(128-32+$#darkcolors+$startcolor)) ));
+ fi;
 
-promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
+ promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 
 # preferably hardcode the color
 #case `hostname -s` in
@@ -316,7 +322,7 @@ alias colortable=_colortable
 _df() {
 
 # colorize the Size, Used, Available, and Use% columns
-listing=`/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Available([ ]+)Use%/\1${LBLUE}Size\2${LORANGE}Used\3${LGREEN}Available\4${LGREEN}Use%${NORM}/" -e "s/([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9]+\%) \//${LBLUE}\1${LORANGE}\2${LGREEN}\3${LGREEN}\4 ${NORM}\//g"`;
+listing=`/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Avail(able)?([ ]+)Use%/\1${LBLUE}Size\2${LORANGE}Used\3${LGREEN}Avail\4\5${LGREEN}Use%${NORM}/" -e "s/([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9]+\%) \//${LBLUE}\1${LORANGE}\2${LGREEN}\3${LGREEN}\4 ${NORM}\//g"`;
 
 # loop through each byte magnitude and colorize each instance found 
 for u in ${(k)magnitudes};
