@@ -83,7 +83,7 @@ PROMPT="%{$promptcolor%}%m %/> %{$fg_no_bold[default]%}"
 case $TERM in
   xterm*)
     # update the the title with the current directory, abbreviate if over 25 characters
-    precmd () {t=`print -P "%m:%~"`; if (( ${#t}>25 )); then t=`echo $t | sed -r 's/([^:])[^:]*([0-9][0-9]):|([^:])[^:]*([^:]):/\1\2\3\4:/'`;oldlen=-1;while (( ${#t}>25 && ${#t}!=oldlen)) {oldlen=${#t};t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;};fi; print "\e]0;$t\a"}
+precmd () {t=`print -P "%m:%~"`;t=`echo $t | sed -r 's/([^:])[^:]*([0-9][0-9]):|([^:])[^:]*([^:]):/\1\2\3\4:/'`;oldlen=-1;t1="${t//[^ijlIFT]}";t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";t3="${t//[^ABEKPSVXYCDHNRUw]}";t4="${t//[^GoQMmW]}";while (( ( ( ${#t1} * 150 ) + ( ${#t2} * 178 ) + ( ${#t3} * 190 ) + ( ${#t4} * 201 ) ) >4360 && ${#t}!=oldlen)) {oldlen=${#t};t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;t1="${t//[^ijlIFT]}";t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";t3="${t//[^ABEKPSVXYCDHNRUw]}";t4="${t//[^GoQMmW]}";}; print "\e]0;$t\a"}
     # update the title with a timestamp and the current process
     preexec () { print -Pn "\e]0;%* $1\a" }
     ;;
