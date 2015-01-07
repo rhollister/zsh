@@ -91,8 +91,7 @@ case $TERM in
     t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";
     t3="${t//[^ABEKPSVXYCDHNRUw]}";
     t4="${t//[^GoQMmW]}";
-    while (( ( ( ${#t1} * 150 ) + ( ${#t2} * 178 ) + ( ${#t3} * 190 ) + ( ${#t4} * 201 ) ) > 4360 && ${#t}!=oldlen)) 
-    {
+    while (( ( ( ${#t1} * 150 ) + ( ${#t2} * 178 ) + ( ${#t3} * 190 ) + ( ${#t4} * 201 ) ) > 4360 && ${#t}!=oldlen)) {
       oldlen=${#t};
       t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;
       t1="${t//[^ijlIFT]}";
