@@ -148,6 +148,8 @@ zstyle ':completion:*:expand:*' tag-order all-expansions
 zstyle ':completion:*:cd' ignore-parents parent pwd
 zstyle ':completion:*:default list-prompt' '%S%M matches%s'
 
+_cds() { cd $@ && ll }
+alias 'cds'=_cds
 # just typing .. acts like cd ..
 alias '..'='cd ..'
 # typing cd ... goes up two levels
@@ -160,7 +162,7 @@ alias -g G="| grep"
 # in history show timestamps and how long it took the command to run
 alias 'history'='history -Di'
 # find in history, you can also just use ctrl+shift+r in zsh
-alias 'fh'='history 1 | grep'a
+alias 'fh'='history 1 | grep'
 # color listings
 alias 'ls'='ls --color'
 
@@ -173,23 +175,62 @@ alias 'ls'='ls --color'
 #  adding/removing columns (eg, ll -i) *will* cause these to break
 #   see also: why you should never parse ls: http://mywiki.wooledge.org/ParsingLs
 _ll() {
+cdir=`echo $@ | sed "s/ -[a-z]|^[ \t]+|[ \t]+$|\/$//ig"`
+if ! [ "$cdir" ]; then cdir="."; fi
+
 # load ls -l for parsing and highlight todays date
 listing=`/bin/ls -vl "$@" --color --time-style="+%b %e %H:%M:%S %s" |
- sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / ${BLUE}\1$BLUE /" `
+ sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(\`date '+%b %e'\`\) / ${BLUE}\1$BLUE /" | awk '
+$10 { 
+u="s"
+ago=strftime("%s")-$9
+if( ago > 59 ) { u="i"; ago=ago / 60
+if( ago > 59 ) { u="h"; ago=ago / 60
+if( ago > 23 ) { u="d"; ago=ago / 24
+if( ago > 29 ) { u="M"; ago=ago / 30
+if( ago > 11 ) { u="y"; ago=ago / 12
+} } } } }
+$2=sprintf("%.0f%s",ago,u)
+
+if (1==0 && $1 ~ /^d/) {
+dir=substr($0,length($1 OFS $2 OFS $3 OFS $4 OFS $5 OFS $6 OFS $7 OFS $8 OFS $9 OFS)+1);
+gsub(/\x1B\[[0-9;]*m/, "", dir)
+cmd = "du -bs \"'$cdir'/"dir"\" 2>/dev/null"
+cmd | getline size
+sub(/[^0-9].*/,"",size)
+if(length(size) < 1) { size = -1 }
+else
+{
+#cmd = "find \"'$cdir'/"dir"\" -type d 2>/dev/null | wc -l"
+#cmd | getline dirnum
+}
+}
+print $0
+}
+END {
+print total
+}
+'`
 
 # find the newest modified file, width of the user permission column, and largest file size
-IFS=' ' read -A array <<< `echo $listing | awk '
+IFS=',' read -A array <<< `echo $listing | awk '
+ BEGIN { largestwidth=0; largestsize=0; newesttime=0; largestagowidth=0; }
  length($3) > largestwidth { largestwidth=length($3) }
  ($1!~/^d/) { if($5 > largestsize) { largestsize=$5 } }
  ($9 > newesttime) { newesttime=$9 }
- END { printf largestwidth " " largestsize " " newesttime }'`
+ (length($2) > largestagowidth) { largestagowidth=length($2); }
+ ($2 ~ "M" ) { pad = 1 }
+ END { printf largestwidth "," largestsize "," newesttime "," largestagowidth "," pad }'`
 
 maxuserwidth=${array[1]}
 largestfile=${array[2]}
+largestagowidth=${array[4]}
+pad="";if [[ ${array[5]} == 1 ]]; then pad=" "; fi
 magnitudestr="${magnitudes[K]}K"
 for m in "M" "G" "T" "P" "E";do
   magnitudestr="$magnitudestr~${magnitudes[$m]}$m";
 done
+
 # load up newesttime as an awk variable, otherwise the condition will fail
 echo $listing | awk -v newesttime=${array[3]} -v magnitudestr=" ~${magnitudestr}" '
 BEGIN {
@@ -199,10 +240,12 @@ BEGIN {
 ($9 == newesttime) {
  $8="'"$BLUE"'" $8 "'"$NORM"'"
 }
-(NR!=1 && $1 && $2 && $3) {
+($1 && $2 && $3) {
   # highlight the largest file
   if($5 ~ /^'"$largestfile"'$/) { highlight="'"$BLUE"'";highlightend="'"$NORM"'";}
 
+  if($5 < 0) { $5="     ";}
+  else{
   # convert file sizes into human-readable format
   size=0;
   # start at the largest size unit
@@ -215,12 +258,22 @@ BEGIN {
   if(size>=10 || int(size*10)%10==0) { $5=sprintf("%s%4d%s%s",  highlight,size,magnitudes[i+2],highlightend); }
   # else print tenth decimal
   else                               { $5=sprintf("%s%4.1f%s%s",highlight,size,magnitudes[i+2],highlightend); }
-
+}
   # hide sizes for directories
   if($1 ~ /^d/) { $5="     ";}
-
+  
+  # color time units in modified-ago column
+  unit=substr($2,length($2))
+  $2=sprintf("%'$largestagowidth's'"$NORM"'", $2)
+  if( unit == "s" ) { sub(/s/, "'"$BRED"'s'"$pad"'", $2) }
+  else if( unit == "i" ) { sub(/i/, "'"$ORANGE"'m'"$pad"'", $2) }
+  else if( unit == "h" ) { sub(/h/, "'"$DGREEN"'h'"$pad"'", $2) }
+  else if( unit == "d" ) { sub(/d/, "'"$DBLUE"'d'"$pad"'", $2) }
+  else if( unit == "M" ) { sub(/M/, "'"$LPURPLE"'mo", $2) }
+  else if( unit == "y" ) { sub(/y/, "'"$PURPLE"'y'"$pad"'", $2) }
+ 
   # print out the fields we want
-  printf("%s %-'"$maxuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s ",$1,$3,$5,$6,$7,$8);
+  printf("%s %-'"$maxuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s %s ",$1,$3,$5,$6,$7,$8,$2);
 
   # print out the file name (which might have spaces in it)
   for(i=10;i<NF;i++){printf $i OFS}
@@ -228,6 +281,12 @@ BEGIN {
 
   # reset highlighting for next record
   highlight="";highlightend="";
+}
+(!$2) {
+  total=$0
+}
+END {
+  print NR-1 " entries"
 }
 '
 }
