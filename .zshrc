@@ -1,4 +1,4 @@
-#: set the default user on first run. the prompt will display user@host when ran as other users
+# set the default user on first run. the prompt will display user@host when ran as other users
 if [ -z ${USER+x} ];  then
  USER=`whoami`
 fi
@@ -7,13 +7,37 @@ if [ -z ${_defaultuser+x} ]; then
 _defaultuser=$USER
 fi
 
-
 # we definitely want colors
 autoload colors
 colors
 
 # ROYGBIP preset colors plus light, dark, and bold/bright modifiers
-export NORM="\033[38;5;7m";RED="\033[38;5;203m";ORANGE="\033[38;5;208m";YELLOW="\033[38;5;227m";GREEN="\033[38;5;40m";BLUE="\033[38;5;39m";PURPLE="\033[38;5;129m";LRED="\033[38;5;212m";LORANGE="\033[38;5;216m";LYELLOW="\033[38;5;228m";LGREEN="\033[38;5;120m";CYAN="\033[38;5;51m";LBLUE="\033[38;5;81m";LPURPLE="\033[38;5;171m";DRED="\033[38;5;124m";DORANGE="\033[38;5;166m";DYELLOW="\033[38;5;142m";DGREEN="\033[38;5;34m";DBLUE="\033[38;5;31m";DPURPLE="\033[38;5;165m";BRED="\033[38;5;196m";BORANGE="\033[38;5;214m";BYELLOW="\033[38;5;226m";BGREEN="\033[38;5;46m";BBLUE="\033[38;5;21m";BPURPLE="\033[38;5;201m"
+NORM="\033[38;5;7m"
+RED="\033[38;5;203m"
+ORANGE="\033[38;5;208m"
+YELLOW="\033[38;5;227m"
+GREEN="\033[38;5;40m"
+BLUE="\033[38;5;39m"
+PURPLE="\033[38;5;129m"
+LRED="\033[38;5;212m"
+LORANGE="\033[38;5;216m"
+LYELLOW="\033[38;5;228m"
+LGREEN="\033[38;5;120m"
+CYAN="\033[38;5;51m"
+LBLUE="\033[38;5;81m"
+LPURPLE="\033[38;5;171m"
+DRED="\033[38;5;124m"
+DORANGE="\033[38;5;166m"
+DYELLOW="\033[38;5;142m"
+DGREEN="\033[38;5;34m"
+DBLUE="\033[38;5;31m"
+DPURPLE="\033[38;5;165m"
+BRED="\033[38;5;196m"
+BORANGE="\033[38;5;214m"
+BYELLOW="\033[38;5;226m"
+BGREEN="\033[38;5;46m"
+BBLUE="\033[38;5;21m"
+BPURPLE="\033[38;5;201m"
 
 # preset colors for scripts that colorize byte unit sizes (eg K, M, G, etc)
 typeset -A magnitudes;
@@ -24,8 +48,10 @@ magnitudes[T]=$YELLOW;
 magnitudes[P]=$LPURPLE;
 magnitudes[E]=$LBLUE;
 
-# change the prompt's color based on a hash of the hostname
+# change the prompt color based on a hash of the hostname
+ # skip dark colors
  startcolor=26
+ # list of more dark colors to skip
  darkcolors=(28 {52..60} {88..96} 100 124)
 
  # get an 8bit hash of the hostname
@@ -37,7 +63,7 @@ magnitudes[E]=$LBLUE;
 
  hash=$(echo $host | md5sum | cut -c1-2)
 
- # convert to decimal and skip preset colors
+ # convert to decimal and skip first set of dark colors
  (( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
 
  # shift dark colors to more readable colors
@@ -52,7 +78,7 @@ magnitudes[E]=$LBLUE;
 
  promptcolor=$(echo -e "\033[38;5;${hostcolor}m")
 
-# preferably hardcode the color
+# preferably you should hardcode the prompt color
 #case `hostname -s` in
 #   HOSTNAME1)
 #       color=%{$fg_bold[blue]%}
@@ -70,33 +96,33 @@ magnitudes[E]=$LBLUE;
 # the prompt itself looks like: hostname /complete/file/path/>
 PROMPT="%{$promptcolor%}$host %/> %{$fg_no_bold[default]%}"
 
-# change terminal title
+# change terminal title for current directory or current running command
 case $TERM in
   xterm*)
-    # update the the title with the current directory, abbreviate if over 436 pixels (standard MobaXterm tab width)
+    # update the the title with the current directory, abbreviate if over 456 pixels (standard MobaXterm tab width without tab number or close button)
     precmd () {
-    t=`print -P "%m:%~"`;
-    t=`echo $t | sed -r 's/([^:])[^:]*([0-9][0-9]):|([^:])[^:]*([^:]):/\1\2\3\4:/'`;
-    oldlen=-1;
-    t1="${t//[^ijlIFT]}";
-    t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";
-    t3="${t//[^ABEKPSVXYCDHNRUw]}";
-    t4="${t//[^GoQMmW]}";
-    while (( ( ( ${#t1} * 150 ) + ( ${#t2} * 178 ) + ( ${#t3} * 190 ) + ( ${#t4} * 201 ) ) > 4360 && ${#t}!=oldlen)) {
-      oldlen=${#t};
-      t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;
-      t1="${t//[^ijlIFT]}";
-      t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";
-      t3="${t//[^ABEKPSVXYCDHNRUw]}";
-      t4="${t//[^GoQMmW]}";
-    }; 
-    print "\e]0;$t\a"
+     t=`print -P "%m:%~"`;
+     t=`echo $t | sed -r 's/([^:])[^:]*([0-9][0-9]):|([^:])[^:]*([^:]):/\1\2\3\4:/'`;
+     oldlen=-1;
+     # filter every character in path into four buckets based on character width in pixels
+     t1="${t//[^ijlIFT]}";
+     t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";
+     t3="${t//[^ABEKPSVXYCDHNRUw]}";
+     t4="${t//[^GoQMmW]}";
+     while (( ( ( ${#t1} * 150 ) + ( ${#t2} * 178 ) + ( ${#t3} * 190 ) + ( ${#t4} * 201 ) ) > 4560 && ${#t}!=oldlen)) {
+       oldlen=${#t};
+       t=`echo $t | sed 's/\/\(.\)[^\/][^\/]*\//\/\1\//'`;
+       t1="${t//[^ijlIFT]}";
+       t2="${t//[ijlIFTGoQMmWABEKPSVXYCDHNRUw]}";
+       t3="${t//[^ABEKPSVXYCDHNRUw]}";
+       t4="${t//[^GoQMmW]}";
+     }; 
+     print "\e]0;$t\a"
     }
-    # update the title with a timestamp and the current process
-    preexec () { print -Pn "\e]0;%* $1\a" }
+    # update the title with a timestamp and the current command
+    preexec () { print -Pn "\e]0;%T"; print -n " $1\a" }
     ;;
 esac
-
 
 autoload -U compinit
 compinit
@@ -137,8 +163,13 @@ zstyle ':completion:*default' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*:cd:*:directory-stack' menu yes select
 zstyle ':completion:*:expand:*' tag-order all-expansions
 zstyle ':completion:*:cd' ignore-parents parent pwd
-zstyle ':completion:*:default list-prompt' '%S%M matches%s'
+# Don't prompt for a huge list, page it!
+zstyle ':completion:*:default' list-prompt '%S%M matches%s'
+# generate descriptions with magic.
+zstyle ':completion:*' auto-description 'specify: %d'
 
+# ls as a directory as soon as successfully cd'd to it
+#  (using a function because alias doesn't understand $@)
 _cds() { cd $@ && ll }
 alias 'cds'=_cds
 # just typing .. acts like cd ..
@@ -152,22 +183,24 @@ alias -g ......='../../../../..'
 alias -g G="| grep"
 # in history show timestamps and how long it took the command to run
 alias 'history'='history -Di'
-# find in history, you can also just use ctrl+shift+r in zsh
+# grep history, you can also just use ctrl+r
 alias 'fh'='history 1 | grep'
 # color listings
 alias 'ls'='ls --color'
 
 # busybox doesn't support ls --time-style, so don't bother with it
+# (special case handled because both MobaXterm and VMWare ESXi run BusyBox)
 if [[ -f /bin/busybox ]]; then
  sed -i "s@\(\-[f] /bin/busybox\)@-z 1 \&\& \1@" .zshrc
- sed -i "s/ --[t]ime-style/ | #--time-style/"     .zshrc
- sed -i "s/timecheck=\'/timecheck=\"\" #\'/"   .zshrc
- sed -i "s/timecolumn=\'10\'/timecolumn='9'/"     .zshrc
+ sed -i "s/ --[t]ime-style/ | #--time-style/"    .zshrc
+ sed -i "s/timecheck=\'/timecheck=\"\" #\'/"     .zshrc
+ sed -i "s/timecolumn=\'10\'/timecolumn='9'/"    .zshrc
 fi
 
 # compilation of hacks for ls -l
 #  - highlights today's date
 #  - highlights most recently modified time(s)
+#  - displays how far ago last modified time was (10mo, 7d, 2s, etc)
 #  - highlights largest file size(s)
 #  - colorizes byte magnitudes K, M, G, etc for easy recognition
 #  - hides useless 4.0K size for every directory
@@ -178,16 +211,29 @@ _ll() {
 timecheck='($9 > newesttime) { newesttime=$9 } '
 timecolumn='10'
 
-# load ls -l for parsing and highlight todays date
+# load ls -l for parsing and remove SELinux permission bit
 eval $(/bin/ls -vl "$@" --color --time-style='+%b %e %H:%M:%S %s' |
- sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" | sed "s/ \(`date '+%b %e'`\) / ${BLUE}\1$BLUE /" |
- # find the newest modified file, width of the user permission column, and largest file size
+ sed -r "s/^([a-z0-9\-]{10})[^ ]/\1 /" |
+ # find the newest modified file, width of the user column, and largest file size
  awk '
- BEGIN { largestwidth=0; largestsize=0; newesttime=0; largestagowidth=0; }
- length($3) > largestwidth { largestwidth=length($3) }
+ BEGIN { 
+  today=strftime("%b%e");
+  largestuserwidth=0;
+  largestsize=0;
+  newesttime=0;
+  largestagowidth=0;
+  FS=" " 
+ }
+ length($3) > largestuserwidth { largestuserwidth=length($3) }
  ($1!~/^d/) { if($5 > largestsize) { largestsize=$5 } }
  '"$timecheck"' 
- ($10) {
+ {
+  # highlight todays date
+  date=sprintf("%s%2s",$6,$7)
+  if(date == today) {
+   $6="'"$BLUE"'" $6
+  }
+  # calculate last modified ago column
   u="s"
   ago=strftime("%s")-$9
   if( ago > 59 ) { u="i"; ago=ago / 60
@@ -204,7 +250,7 @@ eval $(/bin/ls -vl "$@" --color --time-style='+%b %e %H:%M:%S %s' |
   listing=listing "\\n" $0
  }
  # use eval to save these values as zsh variables
- END { printf "listing=\""listing"\";largestwidth=\""largestwidth"\";largestsize=\""largestsize"\";newesttime=\""newesttime"\";largestagowidth=\""largestagowidth"\";pad=\""pad"\"" }')
+ END { printf "listing=\""listing"\";largestuserwidth=\""largestuserwidth"\";largestsize=\""largestsize"\";newesttime=\""newesttime"\";largestagowidth=\""largestagowidth"\";pad=\""pad"\"" }')
 
 if [[ $pad == 1 ]]; then pad=" "; else pad=""; fi
 magnitudestr="${magnitudes[K]}K"
@@ -256,10 +302,10 @@ BEGIN {
    else if( unit == "M" ) { sub(/M/, "'"$LPURPLE"'mo", $2) }
    else if( unit == "y" ) { sub(/y/, "'"$PURPLE"'y'"$pad"'", $2) }
    # print out the fields we want
-   printf("%s %-'"$maxuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s %s ",$1,$3,$5,$6,$7,$8,$2);
+   printf("%s %-'"$largestuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s %s ",$1,$3,$5,$6,$7,$8,$2);
   } else {
    # print out the fields we want
-   printf("%s %-'"$maxuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s ",$1,$3,$5,$6,$7,$8);
+   printf("%s %-'"$largestuserwidth"'s %s'"$NORM"' %s %2d'"$NORM"' %s ",$1,$3,$5,$6,$7,$8);
   }
 
   # print out the file name (which might have spaces in it)
@@ -268,9 +314,6 @@ BEGIN {
 
   # reset highlighting for next record
   highlight="";highlightend="";
-}
-(!$2) {
-  total=$0
 }
 '
 }
@@ -337,7 +380,7 @@ ${DBLUE}DBLUE
 ${LPURPLE}LPURPLE
 ${PURPLE}PURPLE
 ${BPURPLE}BPURPLE
-${DPURPLE}DPURPLE"
+${DPURPLE}DPURPLE$NORM"
 
 if [[ "$1" == "-n" ]]; then
  echo "Alternate view:"
@@ -393,3 +436,4 @@ done;
 echo $listing | sed -r -e "s/(8[0-9]\% [^/]+\/)/$LORANGE\1/g" -e "s/(9[0-7]\% [^/]+\/)/$RED\1/g" -e "s/(9[8-9]\% [^/]+\/)/$BRED\1/g" -e "s/(100\% [^/]+\/)/$BRED\1/g"
 }
 alias df=_df
+
