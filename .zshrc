@@ -1,3 +1,13 @@
+#: set the default user on first run. the prompt will display user@host when ran as other users
+if [ -z ${USER+x} ];  then
+ USER=`whoami`
+fi
+if [ -z ${_defaultuser+x} ]; then
+ sed -i "1 i\_defaultuser=$USER" ~/.zshrc
+_defaultuser=$USER
+fi
+
+
 # we definitely want colors
 autoload colors
 colors
@@ -19,7 +29,13 @@ magnitudes[E]=$LBLUE;
  darkcolors=(28 {52..60} {88..96} 100 124)
 
  # get an 8bit hash of the hostname
- hash=$(hostname -s | md5sum | cut -c1-2) 
+ if [[ $USER == $_defaultuser ]]; then
+  host=$(hostname -s)
+ else
+  host=$USER@$(hostname -s)
+ fi
+
+ hash=$(echo $host | md5sum | cut -c1-2)
 
  # convert to decimal and skip preset colors
  (( hostcolor=$((16#$hash))/2+$startcolor+${#darkcolors} ));           
@@ -52,7 +68,7 @@ magnitudes[E]=$LBLUE;
 #   ;;
 
 # the prompt itself looks like: hostname /complete/file/path/>
-PROMPT="%{$promptcolor%}%m %/> %{$fg_no_bold[default]%}"
+PROMPT="%{$promptcolor%}$host %/> %{$fg_no_bold[default]%}"
 
 # change terminal title
 case $TERM in
@@ -255,9 +271,6 @@ BEGIN {
 }
 (!$2) {
   total=$0
-}
-END {
-  print NR-1 " entries"
 }
 '
 }
