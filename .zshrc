@@ -321,26 +321,57 @@ alias ll=_ll
 
 # set correct key sequences
 autoload zkbd
-function zkbd_file() {
-    [[ -f ~/.zkbd/${TERM}-${VENDOR}-${OSTYPE} ]] && printf '%s' ~/".zkbd/${TERM}-${VENDOR}-${OSTYPE}" && return 0
-    [[ -f ~/.zkbd/${TERM}-${DISPLAY}          ]] && printf '%s' ~/".zkbd/${TERM}-${DISPLAY}"          && return 0
-    return 1
-}
 
-[[ ! -d ~/.zkbd ]] && mkdir ~/.zkbd
-keyfile=$(zkbd_file)
-ret=$?
-if [[ ${ret} -ne 0 ]]; then
-    zkbd
-    keyfile=$(zkbd_file)
-    ret=$?
+# default keyset, works with most terminals
+typeset -g -A key
+key[F1]='^[OP'
+key[F2]='^[OQ'
+key[F3]='^[OR'
+key[F4]='^[OS'
+key[F5]='^[[15~'
+key[F6]='^[[17~'
+key[F7]='^[[18~'
+key[F8]='^[[19~'
+key[F9]='^[[20~'
+key[F10]='^[[21~'
+key[F11]='^[[22~'
+key[F12]='^[[24~'
+key[Backspace]='^H'
+key[Insert]='^[[2~'
+key[Home]='^[[H'
+key[PageUp]='^[[5~'
+key[Delete]='^[[3~'
+key[End]='^[[F'
+key[PageDown]='^[[6~'
+key[Up]='^[[A'
+key[Left]='^[[D'
+key[Down]='^[[B'
+key[Right]='^[[C'
+key[Menu]=''''
+
+# by default, skip using zkbd to set key bindings, use if keys aren't set properly
+if [[ -z 1 ]];then
+ function zkbd_file() {
+     [[ -f ~/.zkbd/${TERM}-${VENDOR}-${OSTYPE} ]] && printf '%s' ~/".zkbd/${TERM}-${VENDOR}-${OSTYPE}" && return 0
+     [[ -f ~/.zkbd/${TERM}-${DISPLAY}          ]] && printf '%s' ~/".zkbd/${TERM}-${DISPLAY}"          && return 0
+     return 1
+ }
+
+ [[ ! -d ~/.zkbd ]] && mkdir ~/.zkbd
+ keyfile=$(zkbd_file)
+ ret=$?
+ if [[ ${ret} -ne 0 ]]; then
+     zkbd
+     keyfile=$(zkbd_file)
+     ret=$?
+ fi
+ if [[ ${ret} -eq 0 ]] ; then
+     source "${keyfile}"
+ else
+     printf 'Failed to setup keys using zkbd.\n'
+ fi
+ unfunction zkbd_file; unset keyfile ret
 fi
-if [[ ${ret} -eq 0 ]] ; then
-    source "${keyfile}"
-else
-    printf 'Failed to setup keys using zkbd.\n'
-fi
-unfunction zkbd_file; unset keyfile ret
 
 # setup keys accordingly
 [[ -n "${key[Home]}"    ]]  && bindkey  "${key[Home]}"    beginning-of-line
