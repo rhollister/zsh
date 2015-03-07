@@ -1,4 +1,4 @@
-# set the default user on first run. the prompt will display user@host when ran as other users
+# set the default user on first run. the prompt will display user@host when run as other users
 if [ -z ${USER+x} ];  then
  USER=`whoami`
 fi
@@ -125,7 +125,7 @@ case $TERM in
 esac
 
 autoload -U compinit
-compinit
+compinit -u
 
 # allow tab completion in the middle of a word
 setopt COMPLETE_IN_WORD
@@ -454,17 +454,16 @@ alias colortable=_colortable
 #  this would be much cleaner with a full regex engine that supported lookarounds, 
 #  but using sed for cross platform compatibility
 _df() {
-
 # colorize the Size, Used, Available, and Use% columns
-listing=`/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Avail(able)?([ ]+)Use%/\1${LBLUE}Size\2${LORANGE}Used\3${LGREEN}Avail\4\5${LGREEN}Use%${NORM}/" -e "s/([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9]+\%) \//${LBLUE}\1${LORANGE}\2${LGREEN}\3${LGREEN}\4 ${NORM}\//g"`;
+listing=$(/bin/df -h | sed -r -e "s/^(Filesystem[ ]+)Size([ ]+)Used([ ]+)Avail(able)?([ ]+)Use%/\1`echo $LBLUE`Size\2`echo $LORANGE`Used\3`echo $LGREEN`Avail\4\5`echo $LGREEN`Use%`echo $NORM`/" -e "s/([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9.]+[KMGTPEZY ][ ]*)([0-9]+\%) \//`echo $LBLUE`\1`echo $LORANGE`\2`echo $LGREEN`\3`echo $LGREEN`\4 `echo $NORM`\//g");
 
-# loop through each byte magnitude and colorize each instance found 
+# loop through each byte magnitude and colorize each instance found
 for u in ${(k)magnitudes};
-  do listing=`echo $listing | sed -r -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9]+\% [^/]+\/)/\1${magnitudes[$u]}$u\2/g"`;
+  do listing=$(echo $listing | sed -r -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1`echo ${magnitudes[$u]}`$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9.]+[^A-Z ]*[KMGTPEZY ][ ]*[^ ]+[0-9]+\% [^/]+\/)/\1`echo ${magnitudes[$u]}`$u\2/g" -e "s/([0-9.]+)$u([ ]+[^ ]+[0-9]+\% [^/]+\/)/\1`echo ${magnitudes[$u]}`$u\2/g");
 done;
 
 # print output with >80% usage in orange, >90% in red, and >98% in bright red
-echo $listing | sed -r -e "s/(8[0-9]\% [^/]+\/)/$LORANGE\1/g" -e "s/(9[0-7]\% [^/]+\/)/$RED\1/g" -e "s/(9[8-9]\% [^/]+\/)/$BRED\1/g" -e "s/(100\% [^/]+\/)/$BRED\1/g"
+echo $listing | sed -r -e "s/(8[0-9]\% [^/]+\/)/`echo $LORANGE`\1/g" -e "s/(9[0-7]\% [^/]+\/)/`echo $RED`\1/g" -e "s/(9[8-9]\% [^/]+\/)/`echo $BRED`\1/g" -e "s/(100\% [^/]+\/)/`echo $BRED`\1/g"
 }
 alias df=_df
 
