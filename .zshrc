@@ -269,7 +269,7 @@ BEGIN {
 }
 ($1 && $2 && $3) {
   # highlight the largest file
-  if($5 ~ /^'"$largestfile"'$/) { highlight="'"$BLUE"'";highlightend="'"$NORM"'";}
+  if($5 ~ /^'"$largestsize"'$/) { highlight="'"$BLUE"'";highlightend="'"$NORM"'";}
 
   if($5 < 0) { $5="     ";}
   else{
