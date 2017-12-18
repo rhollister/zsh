@@ -13,17 +13,17 @@ My .zshrc with scripts for window title changes, enhanced ls, and prompt color b
    1. Today's date in file time is highlighted in blue
    1. Displays age since file was modified
 
-![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_1.jpg)
+![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_1.png)
 
 ## Colorized `df`
    1. Columns are colorized for easy reading
    1. Disk usage percentages are colored based on critical level (80%, 90%, then 98%)
 
-![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_2.jpg)
+![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_2.png)
 
 ## `colortable`
 
 1. Displays list of color names defined in script
 1. Displays table of ANSI color codes
 
-![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_3.jpg)
+![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_3.png)
