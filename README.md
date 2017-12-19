@@ -6,7 +6,8 @@ My .zshrc with scripts for window title changes, enhanced ls, and prompt color b
 
 1. Terminal title is set to the smartly abbreviated hostname and current directory
 1. Terminal title during execution of a command is set to time of execution and command name
-1. Prompt is set to the hostname and current directory. Each host is automatically given a unique color.
+1. Prompt is set to the hostname and current directory. 
+1. Each host is automatically given a unique color determined by hashing the hostname.
 
 ![Screenshot](https://github.com/rhollister/zsh/raw/master/Screenshot_1.png)
 
